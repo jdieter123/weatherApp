@@ -258,6 +258,8 @@
                                 break
                         }
                     })
+                }, error => {
+                    document.querySelector(`#txtLocation`).textContent = "No Location Set"
                 })
             }
         })

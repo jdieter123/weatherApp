@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <title>Weather App</title>
+
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+    <link rel="apple-touch-icon" href="images/apple-touch-icon-iphone60x60.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="images/apple-touchicon-ipad-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touchicon-iphone-retina-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="images/apple-touchicon-ipad-retina-152x152.png">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body class="bg-dark">
+    
+    <!-- Flex Box -->
+    <div class="d-flex align-items-center justify-content-center min-vh-100">
+
+        <!-- Card -->
+        <div class="card col-12 col-md-6">
+            <div class="card-body">
+
+                <h3 class="text-center">Weather App</h3>
+
+                <div class="d-flex justify-content-center align-items-center mt-4">
+
+                    <!-- Location Section -->
+                    <div id="divLocation" class="col-6 text-center text-danger">
+
+                        <i id="iconLocation" class="bi bi-geo-alt fs-2"></i>
+                        <h3 id="txtLocation" class="mb-md-4">No Location Set</h3>
+
+                        <button id="btnSetLocation" class="btn btn-primary col-12 col-md-6">
+                            Set Location
+                        </button>
+
+                    </div>
+
+                    <!-- Weather Info Section -->
+                    <div class="col-6 border-start text-center m-2">
+
+                        <!-- Current Conditions -->
+                        <div id="divCurrentConditions" class="border-bottom">
+                            
+                            <h3 class="text-secondary">Current Conditions</h3>
+
+                            <i id="iconWeather" class="bi bi-question-circle fs-1"></i>
+                            <p id="txtWeatherStatus" class="mb-4"><b>No Location Set</b></p>
+
+                        </div>
+                        
+                        <!-- Weather Stats-->
+                        <div id="divWeatherStats" class="d-flex justify-content-center">
+
+                            <!-- Temp -->
+                            <div class="col-6">
+                                <div class="d-flex justify-content-center align-items-center">
+
+                                    <i id="iconTemperature" class="bi bi-thermometer-half fs-2 text-warning"></i>
+                                    <p id="txtTemperature" class="fs-3 mb-0">?</p>
+
+                                </div>
+                            </div>
+
+                            <!-- Humidity -->
+                            <div class="col-6">
+                                <div class="d-flex justify-content-center align-items-center">
+
+                                    <i id="iconHumidity" class="bi bi-droplet-half fs-2 text-info"></i>
+                                    <p id="txtHumidity" class="fs-3 mb-0">?</p>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script>
+        // Event listener for click on set location button
+        document.querySelector(`#btnSetLocation`).addEventListener(`click`, () => {
+
+            // USED AI TO FIGURE OUT HOW TO GET USERS LATITUDE AND LONGITUDE
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    // get users latitude and longitude
+                    const latitude = position.coords.latitude
+                    const longitude = position.coords.longitude
+
+                    // Weather API url, used to get weather information
+                    const strWeatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=America%2FChicago&forecast_days=1&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`
+
+                    // Reverse Geocoding API url, used to convert users latitude and longitude into location name
+                    const strReverseGeoUrl = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+                    
+                    // GET request to get location name (city) from latitude and longitude
+                    fetch(strReverseGeoUrl)
+                    .then(response => { // Check to see if response is returned ok
+                        if(!response.ok)
+                            throw new Error(`Bad HTTP Response`)
+                        return response.json()
+                    })
+                    .then(data => { // Use data to set location name
+                        const strCity = data.address.city
+                        document.querySelector(`#txtLocation`).textContent = strCity
+                    })
+
+                    // GET request to get weather information
+                    fetch(strWeatherUrl)
+                    .then(response => { // Check to see if response is returned ok
+                        if(!response.ok)
+                            throw new Error(`Bad HTTP Response`)
+                        return response.json()
+                    })
+                    .then(data => { // Use data to set app fields
+                        const strTemperature = `${Math.round(data.current.temperature_2m)}°` // get temperature from data
+                        const strHumidity = `${Math.round(data.current.relative_humidity_2m)}%` // get humidity from data
+                        const numWeatherCode = data.current.weather_code
+
+                        // Set Temperature and humidity
+                        document.querySelector(`#txtTemperature`).textContent = strTemperature
+                        document.querySelector(`#txtHumidity`).textContent = strHumidity
+
+                        // Switch through weather codes to determine new icon and message to set for current conditions
+                        switch(numWeatherCode) {
+                            case 0: // Clear Sky
+                                document.querySelector(`#iconWeather`).className = "bi bi-sun fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Clear Sky"
+                                break
+                            case 1: // Mainly Clear
+                                document.querySelector(`#iconWeather`).className = "bi bi-sun fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Mainly Clear"
+                                break
+                            case 2: // Partly Cloudy
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-sun fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Partly Cloudy"
+                                break
+                            case 3: // Overcast
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloudy fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Overcast"
+                                break
+                            case 45: // Fog
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-fog fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Fog"
+                                break
+                            case 48: // Depositing rime fog
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-fog2 fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Depositing Rime Fog"
+                                break
+                            case 51: // Light Drizzle
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-drizzle fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Light Drizzle"
+                                break
+                            case 53: // Moderate Drizzle
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-drizzle fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Moderate Drizzle"
+                                break
+                            case 55: // Dense Drizzle
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-drizzle-fill fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Dense Drizzle"
+                                break
+                            case 56: // Light Freezing Drizzle
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-drizzle fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Light Freezing Drizzle"
+                                break
+                            case 57: // Dense Freezing Drizzle
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-drizzle-fill fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Dense Freezing Drizzle"
+                                break
+                            case 61: // Slight Rain
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-rain fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Slight Rain"
+                                break
+                            case 63: // Moderate Rain
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-rain fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Moderate Rain"
+                                break
+                            case 65: // Heavy Rain
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-rain-heavy fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Heavy Rain"
+                                break
+                            case 66: // Light Freezing Rain
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-rain fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Light Freezing Rain"
+                                break
+                            case 67: // Heavy Freezing Rain
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-rain-heavy fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Heavy Freezing Rain"
+                                break
+                            case 71: // Slight Snow Fall
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-snow fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Slight Snow Fall"
+                                break
+                            case 73: // Moderate Snow Fall
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-snow fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Moderate Snow Fall"
+                                break
+                            case 75: // Heavy Snow Fall
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-snow-fill fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Heavy Snow Fall"
+                                break
+                            case 77: // Snow grains
+                                document.querySelector(`#iconWeather`).className = "bi bi-snow fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Snow Grains"
+                                break
+                            case 80: // Slight Rain Showers
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-rain-heavy fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Slight Rain Showers"
+                                break
+                            case 81: // Moderate Rain Showers
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-rain-heavy fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Moderate Rain Showers"
+                                break
+                            case 82: // Violent Rain Showers
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-rain-heavy-fill fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Violent Rain Showers"
+                                break
+                            case 85: // Slight Snow Showers
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-snow fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Slight Snow Showers"
+                                break
+                            case 86: // Heavy Snow Showers
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-snow-fill fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Heavy Snow Showers"
+                                break
+                            case 95: // Thunderstorm
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-lightning fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Thunderstorm"
+                                break
+                            case 96: // Thunderstom with slight hail
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-lightning-rain fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Thunderstorm with Slight Hail"
+                                break
+                            case 99: // Thunderstorm with heavy hail
+                                document.querySelector(`#iconWeather`).className = "bi bi-cloud-lightning-rain-fill fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Thunderstorm with Heavy Hail"
+                                break
+                            default: // Unknown
+                                document.querySelector(`#iconWeather`).className = "bi bi-question-circle fs-1"
+                                document.querySelector(`#txtWeatherStatus`).textContent = "Unknown"
+                                break
+                        }
+                    })
+                })
+            }
+        })
+    </script>
+</body>
+</html>

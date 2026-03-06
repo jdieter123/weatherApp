@@ -99,16 +99,16 @@
                 // Loading Message
                 document.querySelector(`#txtLocation`).textContent = "Loading..."
 
-                navigator.geolocation.getCurrentPosition(position => {
+                navigator.geolocation.getCurrentPosition(objPosition => {
                     // get users latitude and longitude
-                    const latitude = position.coords.latitude
-                    const longitude = position.coords.longitude
+                    const numLatitude = objPosition.coords.latitude
+                    const numLongitude = objPosition.coords.longitude
 
                     // Weather API url, used to get weather information
-                    const strWeatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=America%2FChicago&forecast_days=1&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`
+                    const strWeatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${numLatitude}&longitude=${numLongitude}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=America%2FChicago&forecast_days=1&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`
 
                     // Reverse Geocoding API url, used to convert users latitude and longitude into location name
-                    const strReverseGeoUrl = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+                    const strReverseGeoUrl = `https://nominatim.openstreetmap.org/reverse?lat=${numLatitude}&lon=${numLongitude}&format=json`
                     
                     // GET request to get location name (city) from latitude and longitude
                     fetch(strReverseGeoUrl)
@@ -118,8 +118,8 @@
                         return response.json()
                     })
                     .then(data => { // Use data to set location name
-                        const strCity = data.address.city
-                        document.querySelector(`#txtLocation`).textContent = strCity
+                        const strLocation = (data.address.city || data.address.town || data.address.state)
+                        document.querySelector(`#txtLocation`).textContent = strLocation
                     })
 
                     // GET request to get weather information
@@ -138,7 +138,7 @@
                         document.querySelector(`#txtTemperature`).textContent = strTemperature
                         document.querySelector(`#txtHumidity`).textContent = strHumidity
 
-                        // Switch through weather codes to determine new icon and message to set for current conditions
+                        // Switch through weather codes to determine new icon and message to set for current conditions (Did every weather code - thats why this is so long)
                         switch(numWeatherCode) {
                             case 0: // Clear Sky
                                 document.querySelector(`#iconWeather`).className = "bi bi-sun fs-1"
